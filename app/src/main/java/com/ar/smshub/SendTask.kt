@@ -16,6 +16,7 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
     var mainActivity: MainActivity = _context as MainActivity
 
     override fun run() {
+
         lateinit var apiResponse : Response
         try {
             apiResponse = khttp.post(
@@ -26,7 +27,7 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
                 )
             )
         } catch (e: Exception) {
-            Log.d("-->", "Cannot connect to URL")
+            Log.d("-->", "Cannot connect to URL: " + e.message)
             return
         }
         var sms: SMS? = SMS("", "", "")

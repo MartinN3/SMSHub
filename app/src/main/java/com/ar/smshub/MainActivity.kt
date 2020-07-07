@@ -138,7 +138,7 @@ class MainActivity : AppCompatActivity() {
         }
         timerSend = Timer("SendSMS", true)
         if (settingsManager.isSendEnabled) {
-            val seconds = settingsManager.interval * 60
+            val seconds = settingsManager.interval * 10
             val interval: Long
             if (BuildConfig.DEBUG) {
                 interval = (seconds * 400).toLong()
