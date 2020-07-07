@@ -6,13 +6,14 @@
               android:padding="10sp"
               android:orientation="vertical"
               tools:context=".MainFragment">
+
     <TextView
-            android:layout_width="match_parent"
-            android:freezesText="true"
-            android:layout_height="506dp"
-            android:id="@+id/textMainLog"
-            android:background="#002E0404"
-    />
+        android:id="@+id/textMainLog"
+        android:layout_width="match_parent"
+        android:layout_height="506dp"
+        android:background="#002E0404"
+        android:freezesText="true"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small" />
     <Button
             android:text="Clear log"
             android:layout_width="match_parent"

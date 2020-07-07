@@ -57,7 +57,7 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
             sentIn.putExtra("statusURL", settings.statusURL)
             sentIn.putExtra("deviceId", settings.deviceId)
             sentIn.putExtra("delivered", 0)
-
+            sentIn.putExtra("destMsisdn", sms!!.number)
 
             val sentPIn = PendingIntent.getBroadcast(mainActivity, mainActivity.nextRequestCode(), sentIn,0)
 
@@ -66,14 +66,21 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
             deliverIn.putExtra("statusURL", settings.statusURL)
             deliverIn.putExtra("deviceId", settings.deviceId)
             deliverIn.putExtra("delivered", 1)
-
+            deliverIn.putExtra("destMsisdn", sms!!.number)
 
             val deliverPIn = PendingIntent.getBroadcast(mainActivity, mainActivity.nextRequestCode(), deliverIn, 0)
+
+            // mutex, flag to limit sending out to just one message unit at a time ...
+            // this flag will be cleared by SMSSendIntent later as soon as the delivery/sent status intent is received
+            mainActivity.sendStillPending = true
 
             val smsManager = SmsManager.getDefault() as SmsManager
             smsManager.sendTextMessage(sms!!.number, null, sms!!.message, sentPIn, deliverPIn)
             mainActivity.runOnUiThread(Runnable {
-                mainActivity.logMain("Sent to: " + sms!!.number + " - id: " + sms!!.messageId + " - message: " + sms!!.message)
+                mainActivity.logMain(
+                    "OK sms send attempt: to=" + sms!!.number + ", id=" + sms!!.messageId,
+                    true
+                )
             })
             Log.d("-->", "Sent!")
 

@@ -9,6 +9,7 @@ import android.telephony.SmsMessage
 import android.util.Log.*
 import android.support.v4.app.NotificationCompat.getExtras
 import android.os.Bundle
+import android.util.Log
 
 
 class SMSReceiver : BroadcastReceiver() {
@@ -49,6 +50,8 @@ class SMSReceiver : BroadcastReceiver() {
             }
             e(TAG, smsBody)
             var settingsManager = SettingsManager(context)
+
+            Log.d("-->", "Received sms from=" + smsSender)
 
             PostReceivedMessage().execute(settingsManager.receiveURL, settingsManager.deviceId, smsBody, smsSender)
 

@@ -30,10 +30,11 @@ class MainActivity : AppCompatActivity() {
     val RECEIVED_SMS_FLAG = "SMS_RECEIVED"
     val DELIVER_SMS_FLAG = "DELIVER_SMS"
 
-    protected lateinit var settingsManager: SettingsManager
+    lateinit var settingsManager: SettingsManager
     lateinit var timerSend: Timer
     var sendIntent = SMSSendIntent()
     var deliverIntent = SMSSendIntent()
+    var sendStillPending = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,12 +140,7 @@ class MainActivity : AppCompatActivity() {
         timerSend = Timer("SendSMS", true)
         if (settingsManager.isSendEnabled) {
             val seconds = settingsManager.interval * 10
-            val interval: Long
-            if (BuildConfig.DEBUG) {
-                interval = (seconds * 400).toLong()
-            } else {
-                interval = (seconds * 1000).toLong()
-            }
+            val interval: Long = (seconds * 1000).toLong()
             //this does not work
             //logMain("Timer started at " + minutes.toString())
             Log.d("---->", "Timer started at " + interval.toString())
