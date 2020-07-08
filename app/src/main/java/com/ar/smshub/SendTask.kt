@@ -1,6 +1,7 @@
 package com.ar.smshub
 
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.telephony.SmsManager
@@ -16,7 +17,10 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
     var mainActivity: MainActivity = _context as MainActivity
 
     override fun run() {
-
+        if (mainActivity.sendStillPending) {
+            Log.d("-->", "SendTask.run deferred, waiting sendStillPending")
+            return
+        }
         lateinit var apiResponse : Response
         try {
             apiResponse = khttp.post(
@@ -27,7 +31,10 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
                 )
             )
         } catch (e: Exception) {
-            Log.d("-->", "Cannot connect to URL: " + e.message)
+            Log.e("-->", "Cannot connect to URL: " + e.message)
+            mainActivity.runOnUiThread(Runnable {
+                mainActivity.logMain("E", false)
+            })
             return
         }
         var sms: SMS? = SMS("", "", "")
@@ -36,6 +43,7 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
             sms = Klaxon().parse<SMS>(apiResponse.text)
             canSend = true
         } catch (e: com.beust.klaxon.KlaxonException) {
+            // NOTE: The http response body MUST be an empty string
             if (apiResponse.text == "") {
                 mainActivity.runOnUiThread(Runnable {
                     mainActivity.logMain(".", false)
@@ -43,42 +51,50 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
                 Log.d("-->", "Nothing")
             } else {
                 mainActivity.runOnUiThread(Runnable {
-                    mainActivity.logMain("Error parsing response from server: " + apiResponse.text)
+                    mainActivity.logMain("ERR send_api: " + apiResponse.text)
                 })
-                Log.d("error", "Error while parsing SMS" + apiResponse.text)
+                Log.e("error", "Error while parsing send_api response" + apiResponse.text)
             }
         } finally {
             // optional finally block
         }
         if (canSend) {
-            val sentIn = Intent(mainActivity.SENT_SMS_FLAG)
-            settings.updateSettings()
-            sentIn.putExtra("messageId", sms!!.messageId)
-            sentIn.putExtra("statusURL", settings.statusURL)
-            sentIn.putExtra("deviceId", settings.deviceId)
-            sentIn.putExtra("delivered", 0)
-            sentIn.putExtra("destMsisdn", sms!!.number)
-
-            val sentPIn = PendingIntent.getBroadcast(mainActivity, mainActivity.nextRequestCode(), sentIn,0)
-
-            val deliverIn = Intent(mainActivity.DELIVER_SMS_FLAG)
-            deliverIn.putExtra("messageId", sms!!.messageId)
-            deliverIn.putExtra("statusURL", settings.statusURL)
-            deliverIn.putExtra("deviceId", settings.deviceId)
-            deliverIn.putExtra("delivered", 1)
-            deliverIn.putExtra("destMsisdn", sms!!.number)
-
-            val deliverPIn = PendingIntent.getBroadcast(mainActivity, mainActivity.nextRequestCode(), deliverIn, 0)
 
             // mutex, flag to limit sending out to just one message unit at a time ...
             // this flag will be cleared by SMSSendIntent later as soon as the delivery/sent status intent is received
             mainActivity.sendStillPending = true
 
+
+            // refactored based on: https://stackoverflow.com/questions/16643391/how-to-check-for-successful-multi-part-sms-send
+
             val smsManager = SmsManager.getDefault() as SmsManager
-            smsManager.sendTextMessage(sms!!.number, null, sms!!.message, sentPIn, deliverPIn)
+
+            val messageParts = smsManager.divideMessage(sms!!.message)
+            val pendingIntents = ArrayList<PendingIntent>(messageParts.size)
+
+            mainActivity.sendPartsRemaining = messageParts.size
+            mainActivity.sendPartsStatus.clear()
+
+            for (i in 0 until messageParts.size) {
+                val sentIn = Intent(mainActivity.SENT_SMS_FLAG)
+                settings.updateSettings()
+                sentIn.putExtra("messageId", sms!!.messageId)
+                sentIn.putExtra("statusURL", settings.statusURL)
+                sentIn.putExtra("deviceId", settings.deviceId)
+                sentIn.putExtra("destMsisdn", sms!!.number)
+                val sentPIn = PendingIntent.getBroadcast(mainActivity, mainActivity.nextRequestCode(), sentIn,0)
+                pendingIntents.add(sentPIn)
+            }
+            smsManager.sendMultipartTextMessage(
+                sms!!.number,
+                null,
+                messageParts,
+                pendingIntents,
+                null
+            )
             mainActivity.runOnUiThread(Runnable {
                 mainActivity.logMain(
-                    "OK sms send attempt: to=" + sms!!.number + ", id=" + sms!!.messageId,
+                    "OK sms send attempt: parts=" + messageParts.size + ", to=" + sms!!.number + ", id=" + sms!!.messageId,
                     true
                 )
             })

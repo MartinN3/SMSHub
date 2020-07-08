@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.IntentFilter
 import android.telephony.SmsManager
 import android.util.Log
+import kotlin.collections.ArrayList
 
 
 class MainActivity : AppCompatActivity() {
@@ -34,7 +35,10 @@ class MainActivity : AppCompatActivity() {
     lateinit var timerSend: Timer
     var sendIntent = SMSSendIntent()
     var deliverIntent = SMSSendIntent()
+
     var sendStillPending = false
+    var sendPartsRemaining = 0
+    var sendPartsStatus = ArrayList<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,12 +143,12 @@ class MainActivity : AppCompatActivity() {
         }
         timerSend = Timer("SendSMS", true)
         if (settingsManager.isSendEnabled) {
-            val seconds = settingsManager.interval * 10
+            val seconds = settingsManager.interval
             val interval: Long = (seconds * 1000).toLong()
             //this does not work
             //logMain("Timer started at " + minutes.toString())
             Log.d("---->", "Timer started at " + interval.toString())
-            timerSend.schedule(SendTask(settingsManager, this), interval, interval)
+            timerSend.schedule(SendTask(settingsManager, this), 1000, interval)
         }
     }
 
