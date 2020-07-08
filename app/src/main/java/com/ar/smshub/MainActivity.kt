@@ -123,8 +123,10 @@ class MainActivity : AppCompatActivity() {
         Log.d("--->setM.isSend", settingsManager.isSendEnabled.toString())
         if (settingsManager.isSendEnabled) {
             startTimer()
+            FGService.startService(this, "Sending is enabled ...")
         } else {
             cancelTimer()
+            FGService.stopService(this)
         }
     }
 
