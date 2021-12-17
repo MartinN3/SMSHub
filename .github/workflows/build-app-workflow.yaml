@@ -1,0 +1,20 @@
+name: Build
+on: [pull_request, push]
+
+jobs:
+  apk:
+    name: Generate APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Build the app
+        run: ./gradlew build
+      - name: Output results
+        run: |
+          tree app/build
+      - name: Upload APK
+        uses: actions/upload-artifact@v1
+        with:
+          name: apk
+          path: app/build/outputs/apk/debug/app-debug.apk 
