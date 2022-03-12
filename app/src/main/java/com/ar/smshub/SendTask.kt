@@ -104,10 +104,11 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
             })
             return
         }
-        var sms: SMS? = SMS("", "", "")
+        var smsList: List<SMS>? = null;
         var canSend: Boolean = false
         try {
-            sms = Klaxon().parse<SMS>(apiResponse.text)
+            smsList = Klaxon().parseArray(apiResponse.text)
+            Log.d("send", "smsList = $smsList")
             canSend = true
         } catch (e: com.beust.klaxon.KlaxonException) {
             // NOTE: The http response body MUST be an empty string
@@ -125,8 +126,10 @@ class SendTask constructor(_settings: SettingsManager, _context: Context) : Time
         } finally {
             // optional finally block
         }
-        if (canSend) {
-            sms!!.send(mainActivity, settings);
+        if (canSend && smsList != null) {
+            for(sms in smsList) {
+                sms.send(mainActivity, settings);
+            }
         }
 
 

@@ -46,9 +46,10 @@ POST https://yourcustomurl.com/send_api
     action: SEND
 ```
 
-2- It should read a JSON containing *message*, *number* and *id*, or an empty response if there is nothing to send
+2- It should read a JSON containing a list of : *message*, *number* and *id*, or an empty response if there is nothing to send
 ```
-{ "message": "hola mundo!", "number": "3472664455", "messageId": "1" }
+[{ "message": "hola mundo!", "number": "3472664455", "messageId": "1" }, 
+ { "message": "bonjour le monde!", "number": "3472664455", "messageId": "2" }] 
 ```
 
 3- The app will send the SMS *message* to *number*
