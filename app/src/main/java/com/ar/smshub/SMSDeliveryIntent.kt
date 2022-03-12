@@ -1,35 +1,33 @@
 package com.ar.smshub
 
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.app.Activity
-import android.util.Log
 import android.telephony.SmsManager
+import android.util.Log
 import khttp.responses.Response
 import org.jetbrains.anko.doAsync
 
-
-class SMSSendIntent : BroadcastReceiver() {
+class SMSDeliveryIntent : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        val mainActivity: MainActivity = context as MainActivity
+        var mainActivity: MainActivity = context as MainActivity
 
-        val status: String
+        var status: String
         var statusDesc: String = "UNKNOWN_ERROR"
 
         /*mainActivity.runOnUiThread(Runnable {
-            mainActivity.logMain("on Received resultCode $resultCode", newline = true);
+            mainActivity.logMain("on Delivery ! resultCode $resultCode", newline = true);
         })
         mainActivity.runOnUiThread(Runnable {
-            mainActivity.logMain("on Received resultData $resultData", newline = true);
+            mainActivity.logMain("on Delivery ! resultData $resultData", newline = true);
         })*/
-
 
 
         when (resultCode) {
             Activity.RESULT_OK -> {
-                status = "SENT"
+                status = "DELIVERED"
                 statusDesc = "OK"
             }
             SmsManager.RESULT_ERROR_GENERIC_FAILURE -> {
@@ -56,7 +54,7 @@ class SMSSendIntent : BroadcastReceiver() {
 
 
         // var statusUrl = intent!!.getStringExtra("statusURL") // ignore but rely on current settings
-        val deviceId = intent!!.getStringExtra("deviceId")
+        var deviceId = intent!!.getStringExtra("deviceId")
         val messageId = intent.getStringExtra("messageId")
         val destMsisdn = intent.getStringExtra("destMsisdn")
 
@@ -67,13 +65,10 @@ class SMSSendIntent : BroadcastReceiver() {
             return
         }
 
-        //Log.d("send-multipart", "send_sms_request = $send_sms_request\nmessageId = $messageId\n " +
-        //        "pendingSendSMS.values = ${mainActivity.pendingSendSMS.values}\npendingSendSMS.keys = ${mainActivity.pendingSendSMS.keys}");
+        send_sms_request.sendPartsDeliveryStatus.add(status)
 
-        send_sms_request.sendPartsStatus.add(status)
-
-        send_sms_request.sendPartsRemaining--
-        if (send_sms_request.sendPartsRemaining > 0) {
+        send_sms_request.sendPartsDeliveryRemaining--
+        if (send_sms_request.sendPartsDeliveryRemaining > 0) {
             Log.d("send-multipart", "Got pdu status=" + status + ", statusDesc=" + statusDesc + ", messageId=" + messageId + ", destMsisdn=" + destMsisdn + ", waiting for remaining: " + send_sms_request.sendPartsRemaining)
             return;
         }
@@ -81,9 +76,9 @@ class SMSSendIntent : BroadcastReceiver() {
         Log.d("----->", "async status_api attempt messageId=" + messageId + ", status=" + status + ", deviceId=" + deviceId)
 
         // check that ALL PDUs were successfully sent ...
-        var mpStatus = "SENT"
-        for (pstatus in send_sms_request.sendPartsStatus) {
-            if (pstatus != "SENT") {
+        var mpStatus = "DELIVERED"
+        for (pstatus in send_sms_request.sendPartsDeliveryStatus) {
+            if (pstatus != "DELIVERED") {
                 mpStatus = "FAILED"
                 break
             }
@@ -106,7 +101,7 @@ class SMSSendIntent : BroadcastReceiver() {
                         )
                     )
                     Log.d("----->", res.text)
-                    send_sms_request.sendStillPending = false
+                    send_sms_request.deliveryStillPending = false
                     mainActivity.runOnUiThread(Runnable {
                         mainActivity.logMain(
                             "OK status_api post: to=" + destMsisdn + ", id=" + messageId + ", status=" + status,

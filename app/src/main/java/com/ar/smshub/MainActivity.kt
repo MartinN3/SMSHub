@@ -23,6 +23,7 @@ import android.util.Log
 import kotlin.collections.ArrayList
 
 
+
 class MainActivity : AppCompatActivity() {
     var request_code = 0
     var MY_PERMISSIONS_REQUEST_SEND_SMS = 1
@@ -34,11 +35,11 @@ class MainActivity : AppCompatActivity() {
     lateinit var settingsManager: SettingsManager
     lateinit var timerSend: Timer
     var sendIntent = SMSSendIntent()
-    var deliverIntent = SMSSendIntent()
+    var deliverIntent = SMSDeliveryIntent()
 
     var sendStillPending = false
-    var sendPartsRemaining = 0
-    var sendPartsStatus = ArrayList<String>()
+
+    var pendingSendSMS = mutableMapOf<String, SMS>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
